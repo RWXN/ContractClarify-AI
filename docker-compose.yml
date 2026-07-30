@@ -1,0 +1,29 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: contractclarify_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/contractclarify
+      - ENVIRONMENT=development
+    depends_on:
+      - db
+    volumes:
+      - ./backend/app:/app/app
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: contractclarify_db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=contractclarify
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
