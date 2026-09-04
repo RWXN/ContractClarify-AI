@@ -3,6 +3,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import ExpiredSignatureError, InvalidTokenError
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.core.security import create_access_token, decode_access_token
 from app.db.database import get_db
 from app.schemas.auth import LoginRequest, TokenResponse
@@ -54,38 +56,5 @@ def login(login_request:LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=UserRead)
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-):
-    token = credentials.credentials
-
-    try:
-        payload = decode_access_token(token)
-        email = payload.get("sub")
-    except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired"
-        )
-    except InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
-        )
-
-    if email is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload"
-        )
-
-    user = get_user_by_email(db, email)
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    return user
+def read_current_user(current_user: User = Depends(get_current_user)):
+    return current_user

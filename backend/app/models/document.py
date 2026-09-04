@@ -26,11 +26,26 @@ class Document(Base):
         nullable=False
     )
 
+    stored_filename: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
+
+    file_path: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False
+    )
+
     file_type: Mapped[str] = mapped_column(
         String(20),
         nullable=False
     )
 
+    file_size: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+    
     status: Mapped[str] = mapped_column(
         String(50),
         default="uploaded",
