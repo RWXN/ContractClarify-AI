@@ -7,6 +7,10 @@ from sqlalchemy.orm import Session
 from app.models.document import Document
 from app.models.user import User
 
+from app.services.chunking_service import chunk_pages
+from app.services.document_chunk_service import create_document_chunks
+from app.services.text_extraction_service import extract_text_from_file
+
 MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 
 ALLOWED_CONTENT_TYPES = {
@@ -109,3 +113,44 @@ def get_user_document_by_id(
         .filter(Document.owner_id == current_user.id)
         .first()
     )
+
+
+def process_uploaded_document(
+    db: Session,
+    document: Document
+) -> Document:
+    try:
+        pages = extract_text_from_file(
+            file_path=document.file_path,
+            file_type=document.file_type
+        )
+
+        chunks = chunk_pages(pages)
+
+        if not chunks:
+            document.status = "failed"
+            document.extracted_text_preview = None
+            db.commit()
+            db.refresh(document)
+            return document
+
+        create_document_chunks(
+            db=db,
+            document_id=document.id,
+            chunks=chunks
+        )
+
+        full_text = " ".join(page["text"] for page in pages)
+        document.extracted_text_preview = full_text[:500]
+        document.status = "processed"
+
+        db.commit()
+        db.refresh(document)
+
+        return document
+
+    except Exception:
+        document.status = "failed"
+        db.commit()
+        db.refresh(document)
+        raise

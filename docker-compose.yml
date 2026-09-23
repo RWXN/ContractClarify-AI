@@ -12,6 +12,7 @@ services:
       - db
     volumes:
       - ./backend/app:/app/app
+      - ./backend/storage:/app/storage
 
   db:
     image: pgvector/pgvector:pg16

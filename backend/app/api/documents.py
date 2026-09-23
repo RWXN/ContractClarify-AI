@@ -6,14 +6,20 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.document import DocumentListResponse, DocumentRead
+from app.schemas.document import (
+    DocumentChunksResponse, 
+    DocumentListResponse, 
+    DocumentRead,
+)
 from app.services.document_service import (
     create_document_record,
     get_user_document_by_id,
     get_user_documents,
     save_uploaded_file,
     validate_upload_file,
+    process_uploaded_document,
 )
+from app.services.document_chunk_service import get_chunks_by_document_id
 
 logger = logging.getLogger(__name__)
 
@@ -59,14 +65,20 @@ async def upload_document(
         file_path=file_path
     )
 
+    processed_document = process_uploaded_document(
+    db=db,
+    document=document
+)
+
     logger.info(
-        "Document upload completed: user_id=%s document_id=%s filename=%s",
+        "Document upload and processing completed: user_id=%s document_id=%s filename=%s status=%s",
         current_user.id,
-        document.id,
-        document.filename
+        processed_document.id,
+        processed_document.filename,
+        processed_document.status
     )
 
-    return document
+    return processed_document
 
 
 @router.get("", response_model=DocumentListResponse)
@@ -101,3 +113,31 @@ def get_document(
         )
 
     return document
+
+@router.get("/{document_id}/chunks", response_model=DocumentChunksResponse)
+def get_document_chunks(
+    document_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    document = get_user_document_by_id(
+        db=db,
+        current_user=current_user,
+        document_id=document_id
+    )
+
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found"
+        )
+
+    chunks = get_chunks_by_document_id(
+        db=db,
+        document_id=document.id
+    )
+
+    return DocumentChunksResponse(
+        document_id=document.id,
+        chunks=chunks
+    )

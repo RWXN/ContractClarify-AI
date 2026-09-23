@@ -22,3 +22,22 @@ class DocumentRead(BaseModel):
 
 class DocumentListResponse(BaseModel):
     documents: list[DocumentRead]
+
+
+class DocumentChunkRead(BaseModel):
+    id: int
+    document_id: int
+    chunk_index: int
+    page_number: int | None
+    content: str
+    token_count_estimate: int
+    created_at: datetime
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
+class DocumentChunksResponse(BaseModel):
+    document_id: int
+    chunks: list[DocumentChunkRead]
