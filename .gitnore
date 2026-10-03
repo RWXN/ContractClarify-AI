@@ -3,7 +3,11 @@ __pycache__/
 *.py[cod]
 venv/
 .venv/
+*.pyc
+*.pyo
+*.pyd
 .env
+.pytest_cache/
 
 # Node
 node_modules/
@@ -14,10 +18,15 @@ dist/
 .idea/
 
 # OS
-.DS_Store_
+.DS_Store
+**/.DS_Store
 
 # Logs
 *.log
 
 # Database
 *.sqlite3
+
+# Uploaded files
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
